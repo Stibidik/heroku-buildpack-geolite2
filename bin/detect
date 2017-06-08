@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+echo "GeoLite2"
+exit 0

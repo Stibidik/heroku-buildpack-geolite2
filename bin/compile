@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+ENV_FILE=$3
+
+VENDORED_GEOIP="vendor/geoip2"
+APP_GEOIP="/app/$VENDORED_GEOIP"
+
+GEOLITECITY_URL="http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz"
+GEOLITECITY_FILE="GeoLite2-City.mmdb"
+
+GEOLITECOUNTRY_URL="http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz"
+GEOLITECOUNTRY_FILE="GeoLite2-Country.mmdb"
+
+# Prepare the installation
+echo "-----> Installing Maxmind GeoLite2 databases"
+
+mkdir -p $CACHE_DIR/.geoip
+cd $CACHE_DIR/.geoip
+
+# Download the files
+echo "       Downloading ${GEOLITECITY_FILE}.gz"
+curl -s -L -z $GEOLITECITY_FILE -o ${GEOLITECITY_FILE}.gz $GEOLITECITY_URL
+if [ -s ${GEOLITECITY_FILE}.gz ]; then
+    echo "       Unpacking ${GEOLITECITY_FILE}.gz"
+    gunzip -f ${GEOLITECITY_FILE}.gz
+else
+    echo "       ${GEOLITECITY_FILE} is up-to-date"
+fi
+
+echo "       Downloading ${GEOLITECOUNTRY_FILE}.gz"
+curl -s -L -z $GEOLITECOUNTRY_FILE -o ${GEOLITECOUNTRY_FILE}.gz $GEOLITECOUNTRY_URL
+if [ -s ${GEOLITECOUNTRY_FILE}.gz ]; then
+    echo "       Unpacking ${GEOLITECOUNTRY_FILE}.gz"
+    gunzip -f ${GEOLITECOUNTRY_FILE}.gz
+else
+    echo "       ${GEOLITECOUNTRY_FILE} is up-to-date"
+fi
+
+# Install them
+mkdir -p "$BUILD_DIR/$VENDORED_GEOIP/"
+cp $GEOLITECITY_FILE "$BUILD_DIR/$VENDORED_GEOIP/$GEOLITECITY_FILE"
+cp $GEOLITECOUNTRY_FILE "$BUILD_DIR/$VENDORED_GEOIP/$GEOLITECOUNTRY_FILE"
+
+# Populate profile.d
+PROFILE_PATH="$BUILD_DIR/.profile.d/geoip.sh"
+mkdir -p $(dirname $PROFILE_PATH)
+echo "export GEOIP_PATH=\"$APP_GEOIP\"" >> $PROFILE_PATH
+
+# Done!
+echo "       GeoLite2 databases are available via env in \$GEOIP_PATH = $APP_GEOIP"
